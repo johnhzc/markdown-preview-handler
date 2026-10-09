@@ -73,7 +73,7 @@ PreviewHandler : IPreviewHandler        ← COM 接口实现
 
 * `SetWindow` 收到宿主 HWND 后，用 `SetParent` 把 WinForms 控件挂为子窗口，`SetRect`/`SetWindowPos` 控制布局
 * COM 注册键结构与 `regasm /codebase` 输出一致（`Class`/`Assembly`/`RuntimeVersion`/`CodeBase`），由 mscoree shim 在代进程中启动 CLR
-* 代进程 AppID 自动探测：优先 64 位 prevhost `{534A1E02-…}`，回退 32 位 `{6d2b507e-…}`
+* 代进程 AppID：`{6d2b5079-2f0b-48dd-ab7f-97cec514d30b}`（`System32\prevhost.exe`）
 
 ## 构建
 
@@ -81,7 +81,22 @@ PreviewHandler : IPreviewHandler        ← COM 接口实现
 build.cmd
 ```
 
-使用系统自带的 .NET Framework 4 编译器（无需安装 SDK/VS），输出 `bin\\MarkdownPreviewHandler.dll`（约 30 KB，单文件零依赖）。
+使用系统自带的 .NET Framework 4 编译器（无需安装 SDK/VS），输出 `bin\MarkdownPreviewHandler.dll`（约 48 KB，单文件零依赖）。
+
+> `bin/` 未纳入版本管理；`src/handler.snk` 是开发用的强名称密钥，随仓库一起提供以便直接编译，**请勿复用到其他项目**。
+
+## 仓库与同步
+
+|平台|地址|
+|-|-|
+|GitHub|https://github.com/johnhzc/markdown-preview-handler|
+|Gitee|https://gitee.com/kongjingnengbai/markdown-preview-handler|
+
+已配置一个 `all` remote，一次推送两个平台：
+
+```bash
+git push all main
+```
 
 ## Markdown 纯文本预览（本机实际使用的方案）
 
