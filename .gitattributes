@@ -1,0 +1,18 @@
+# 统一换行符处理，避免 Windows(CRLF) / Unix(LF) 往返改动
+* text=auto
+
+*.cmd  text eol=crlf
+*.bat  text eol=crlf
+*.ps1  text eol=crlf
+*.cs   text eol=crlf
+*.reg  text eol=crlf
+*.md   text eol=lf
+*.json text eol=lf
+*.py   text eol=lf
+*.html text eol=lf
+
+*.dll  binary
+*.exe  binary
+*.snk  binary
+*.png  binary
+*.ico  binary
