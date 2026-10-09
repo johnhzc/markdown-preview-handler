@@ -2,6 +2,8 @@
 
 Windows 资源管理器预览处理器插件：在**预览窗格**（Alt+P）中直接渲染 Markdown 文档与图片文件，无需打开外部应用。
 
+**仓库**：[GitHub](https://github.com/johnhzc/markdown-preview-handler) · [Gitee](https://gitee.com/kongjingnengbai/markdown-preview-handler) ｜ **协议**：[MIT](LICENSE)
+
 > ## ⚠️ 2026-10 实测结论（Windows 11 25H2 / build 26200）
 >
 > ### 一、最关键的坑：注册时用错了 GUID
