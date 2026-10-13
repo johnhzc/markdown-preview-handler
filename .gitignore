@@ -17,6 +17,15 @@ MarkdownPreviewHandler/
 .vs/
 obj/
 
+# C++ 中间产物
+*.obj
+*.pdb
+*.ilk
+*.exp
+
+# WebView2 SDK（第三方，按 native/README.md 自行下载）
+native/webview2/
+
 # 编辑器
 .vscode/
 .idea/

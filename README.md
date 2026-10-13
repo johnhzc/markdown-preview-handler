@@ -48,7 +48,43 @@ Windows 资源管理器预览处理器插件：在**预览窗格**（Alt+P）中
 * **编码兼容**：UTF-8（含/不含 BOM）、UTF-16、GBK 自动识别
 * **安全模型**：运行在系统代进程 `prevhost.exe` 中，不侵入 Explorer 主进程；文件解析异常只影响当前预览，显示错误提示条
 
-## 架构
+## 两条实现路线
+
+本仓库有**三套实现**，共用同一个 CLSID `{3511EA64-…}`：
+
+|路线|位置|形态|状态|
+|-|-|-|-|
+|**独立查看器（推荐，实测可用）**|`viewer/`|C++ 独立 GUI 程序 + WebView2|✅ 已编译、已实测渲染|
+|原生预览处理器|`native/`|C++ in-proc COM（WebView2 渲染）|代码完整、本机进程内自测通过；但**本机 shell 不实例化它**|
+|托管 .NET 预览处理器|`src/`|C# + `mscoree` shim + GAC|注册链路已修对，shell 同样不加载|
+
+### 独立查看器（`viewer/`）
+
+不依赖 Explorer 的预览机制：右键 `.md` → 「用 Markdown 查看器打开」，或拖文件到 exe、或命令行传路径。
+
+```powershell
+# 编译（需要 C++ 工具链，见 native/README.md 的准备步骤）
+powershell -ExecutionPolicy Bypass -File .\viewer\build_viewer.ps1
+
+# 安装（每用户，注册右键菜单 + SendTo 快捷方式）
+powershell -ExecutionPolicy Bypass -File .\viewer\install_viewer.ps1
+powershell -ExecutionPolicy Bypass -File .\viewer\register_verb.ps1
+
+# 卸载
+powershell -ExecutionPolicy Bypass -File .\viewer\install_viewer.ps1 -Uninstall
+```
+
+功能：WebView2 渲染（GFM + 明暗主题）、Ctrl+R / F5 重新加载、Esc 关闭、相对路径图片正确显示。
+
+### 原生预览处理器（`native/`）
+
+编译与注册步骤见 [`native/README.md`](native/README.md)：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\native\build_native.ps1 -Install -Test
+```
+
+## 架构（托管版，`src/`）
 
 ```
 Explorer 预览窗格
@@ -98,10 +134,45 @@ build.cmd
 git push all main
 ```
 
-## Markdown 纯文本预览（本机实际使用的方案）
+## ⚠️ 预览器白名单：动它之前先备份
 
-`.md` 目前接到系统自带的 **Plain Text 持久处理器**上（`.txt`/`.cs`/`.js`/`.sql` 用的就是它），
-预览窗格直接显示 Markdown 源码。渲染版处理器在本机的状态见顶部说明。
+Windows 只在下面这两个列表里查找预览处理器；**列表里没有的处理器，shell 根本不会加载**：
+
+```
+HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\PreviewHandlers
+HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Shell Extensions\Approved
+```
+
+本机实测过的教训：一次"清理自己的注册"的脚本误把**整个列表键**当成自己的删掉，
+18 个系统条目（TXT 预览器、PDF 预览器、照片、WPS、Adobe…）一起消失，
+**`.txt`/`.cs`/图片/PDF 的预览全部失效**。
+
+因此：
+
+* `install_native.ps1` 已改为**只删自己那一条 CLSID 值**（`RegDeleteValue`）
+* 一旦发现预览整体失效，先跑恢复脚本：
+
+```powershell
+# 管理员
+powershell -ExecutionPolicy Bypass -File .\restore_preview_handlers.ps1
+```
+
+它会按完整清单重建两个键（含系统 + 第三方条目），并把结果打印出来。
+
+## Markdown 当前状态（本机）
+
+|扩展名|预览方式|
+|-|-|
+|`.txt` / `.cs`|Windows TXT 预览器（系统）|
+|`.png` / `.jpg` / `.pdf`|系统默认（照片 / WPS PDF）|
+|`.md` / `.markdown` / `.mdown` / `.mkd`|Plain Text 持久处理器（显示源码），**或**用独立查看器看渲染效果|
+
+`.md` 的默认打开程序由 `UserChoice` 决定（本机是 WPS），该键受 Hash 保护，只能用 GUI 修改。
+
+## Markdown 纯文本预览
+
+`.md` 接到系统自带的 **Plain Text 持久处理器**上（`.txt`/`.cs`/`.js`/`.sql` 用的就是它），
+预览窗格直接显示 Markdown 源码。
 
 ```powershell
 # 每用户注册，不需要管理员；可随时撤销

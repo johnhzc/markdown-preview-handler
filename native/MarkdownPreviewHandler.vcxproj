@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Native Markdown preview handler (in-process COM server).
+
+  Build from a "x64 Native Tools Command Prompt for VS":
+      msbuild MarkdownPreviewHandler.vcxproj /p:Configuration=Release /p:Platform=x64 /p:WebView2Dir=<dir>
+
+  WebView2Dir must point at a directory containing:
+      include\WebView2.h
+      lib\x64\WebView2Loader.lib
+      x64\WebView2Loader.dll      (copied next to the output)
+
+  If WebView2Dir is omitted the project still builds, with a GDI text fallback
+  instead of the WebView2 renderer (see HAVE_WEBVIEW2_SDK in the sources).
+-->
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{7E3B1C2A-9D44-4B18-9A51-2C6E8F0B1D22}</ProjectGuid>
+    <RootNamespace>MarkdownPreviewNative</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+
+  <PropertyGroup Condition="'$(Configuration)'=='Release'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+
+  <PropertyGroup>
+    <OutDir>$(ProjectDir)..\bin\</OutDir>
+    <IntDir>$(ProjectDir)..\obj\$(Configuration)\</IntDir>
+    <TargetName>MarkdownPreviewNative</TargetName>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization Condition="'$(Configuration)'=='Release'">MaxSpeed</Optimization>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;UNICODE;_UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary Condition="'$(Configuration)'=='Release'">MultiThreadedDLL</RuntimeLibrary>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <AdditionalDependencies>ole32.lib;oleaut32.lib;gdiplus.lib;shlwapi.lib;windowscodecs.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ModuleDefinitionFile Condition="Exists('$(ProjectDir)MarkdownPreviewNative.def')">$(ProjectDir)MarkdownPreviewNative.def</ModuleDefinitionFile>
+    </Link>
+    <PostBuildEvent Condition="'$(WebView2Dir)'!=''">
+      <Command>copy /Y "$(WebView2Dir)\x64\WebView2Loader.dll" "$(OutDir)"</Command>
+      <Message>Copying WebView2Loader.dll next to the handler</Message>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+
+  <ItemGroup>
+    <ClCompile Include="src\DllMain.cpp" />
+    <ClCompile Include="src\MarkdownPreviewHandler.cpp" />
+    <ClCompile Include="src\MarkdownToHtml.cpp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ClInclude Include="src\MarkdownPreviewHandler.h" />
+  </ItemGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>
